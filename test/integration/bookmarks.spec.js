@@ -3,14 +3,16 @@
 const expect = require('chai').expect;
 const request = require('supertest');
 const app = require('../../dst/server');
-const mongoose = require('mongoose');
+const Bookmark = require('../../dst/models/bookmark');
+
+// const mongoose = require('mongoose');
 
 describe('bookmarks', () => {
-  beforeEach((done) => {
-    mongoose.connection.db.dropDatabase(() => {
-      done();
-    });
-  });
+  // beforeEach((done) => {
+  //   mongoose.connection.db.dropDatabase(() => {
+  //     done();
+  //   });
+  // });
 
   describe('post /bookmarks', () => {
     it('should create a bookmark', (done) => {
@@ -43,7 +45,7 @@ describe('bookmarks', () => {
       });
     });
 
-    it('should NOT create a bookmark - date is too old', (done) => {
+    it('should NOT create a bookmark - date published problem', (done) => {
       request(app)
       .post('/bookmarks')
       .send({ title: 'a', url: 'http://google.com', description: 'c',
@@ -96,6 +98,21 @@ describe('bookmarks', () => {
         expect(rsp.status).to.equal(400);
         expect(rsp.body.messages).to.deep.equal(['"tags" must contain at least 1 items']);
         done();
+      });
+    });
+
+    it('should should delete a bookmark', (done) => {
+      Bookmark.create({ title: 'a', url: 'http://google.com', description: 'c',
+              isProtected: true, datePublished: '2016-03-15',
+              stars: 20, tags: ['d', 'e'] }, (dberr, bookmark) => {
+        request(app)
+        .delete(/bookmarks/ + bookmark._id)
+        .end((err, rsp) => {
+          expect(err).to.be.null;
+          expect(rsp.status).to.equal(200);
+          expect(rsp.body.message).to.equal('delete success');
+          done();
+        });
       });
     });
   });
